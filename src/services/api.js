@@ -1,4 +1,5 @@
-const API_BASE_URL = 'https://quizzy-fb17.onrender.com';
+import API_BASE_URL from '../config';
+
 const API_URL = `${API_BASE_URL}/api`;
 
 const getHeaders = () => {
