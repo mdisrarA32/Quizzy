@@ -1,2 +1,2 @@
-const API_BASE_URL = "https://quizzy-fb17.onrender.com";
+const API_BASE_URL = "https://quizzy-fbl7.onrender.com";
 export default API_BASE_URL;
