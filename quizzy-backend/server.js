@@ -19,36 +19,22 @@ connectDB().catch(err => {
     console.error('CRITICAL: Initial database connection failed:', err.message);
 });
 
-// ================= SECURITY & LOGGING =================
+// ================= CORS FIRST =================
+const corsOptions = {
+    origin: 'https://quizzy-alam-alpha.vercel.app',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// ================= SECURITY AFTER CORS =================
 app.use(helmet());
+
+// Logging
 app.use(morgan('dev'));
-
-// ================= CORS CONFIG (PRODUCTION READY) =================
-const allowedOrigins = [
-    process.env.FRONTEND_URL,      // Production (Vercel)
-    'http://localhost:5173',       // Local dev
-    'http://localhost:5174',
-    'http://localhost:5175'
-].filter(Boolean);
-
-app.use(cors({
-    origin: function (origin, callback) {
-
-        // Allow requests with no origin (Postman, mobile apps)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-
-        console.log("❌ Blocked by CORS:", origin);
-        return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true
-}));
-
-// Handle preflight automatically
-app.options('*', cors());
 
 app.use(express.json());
 
