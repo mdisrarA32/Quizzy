@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://quizzy-fb17.onrender.com';
+const API_URL = `${API_BASE_URL}/api`;
 
 const getHeaders = () => {
     const user = JSON.parse(localStorage.getItem('quizzy-user'));
