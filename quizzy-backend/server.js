@@ -20,21 +20,15 @@ connectDB().catch(err => {
 });
 
 // ================= CORS (MUST BE FIRST) =================
-const allowedOrigin = 'https://quizzy-alam-alpha.vercel.app';
+const corsOptions = {
+    origin: 'https://quizzy-alam-alpha.vercel.app',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+};
 
-app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (Postman, mobile apps)
-        if (!origin) return callback(null, true);
-
-        if (origin === allowedOrigin) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true
-}));
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Intercept preflight OPTIONS requests
 
 // ================= SECURITY AFTER CORS =================
 app.use(helmet());
