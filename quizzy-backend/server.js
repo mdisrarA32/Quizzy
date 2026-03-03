@@ -14,42 +14,45 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to Database (Non-blocking)
+// ================= DATABASE CONNECTION =================
 connectDB().catch(err => {
     console.error('CRITICAL: Initial database connection failed:', err.message);
 });
 
-// Security & Logging Middleware
+// ================= SECURITY & LOGGING =================
 app.use(helmet());
 app.use(morgan('dev'));
 
-// Middleware Configuration
+// ================= CORS CONFIG (PRODUCTION READY) =================
 const allowedOrigins = [
-    process.env.FRONTEND_URL
+    process.env.FRONTEND_URL,      // Production (Vercel)
+    'http://localhost:5173',       // Local dev
+    'http://localhost:5174',
+    'http://localhost:5175'
 ].filter(Boolean);
 
-const corsOptions = {
+app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
+
+        // Allow requests with no origin (Postman, mobile apps)
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
         }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-    optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
-};
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
+        console.log("❌ Blocked by CORS:", origin);
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+}));
+
+// Handle preflight automatically
+app.options('*', cors());
+
 app.use(express.json());
 
-// Basic Test Route
+// ================= HEALTH CHECK =================
 app.get('/api/test', (req, res) => {
     res.status(200).json({
         message: "Backend working",
@@ -58,42 +61,45 @@ app.get('/api/test', (req, res) => {
     });
 });
 
-// Rate Limiting (applied after test route to ensure test route is always accessible)
+// ================= RATE LIMITING =================
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100
 });
+
 app.use('/api', limiter);
 
-// Routes
+// ================= ROUTES =================
 app.use('/api/auth', authRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/users', userRoutes);
 
-// 404 Handler
+// ================= 404 HANDLER =================
 app.use((req, res) => {
     res.status(404).json({ message: `Route ${req.originalUrl} not found` });
 });
 
-// Error Handling Middleware
+// ================= ERROR HANDLER =================
 app.use((err, req, res, next) => {
     console.error('Server Internal Error:', err);
+
     const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+
     res.status(statusCode).json({
         message: err.message,
         stack: process.env.NODE_ENV === 'production' ? null : err.stack,
     });
 });
 
+// ================= SERVER START =================
 const server = app.listen(PORT, () => {
     console.log('--------------------------------------------------');
     console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode`);
     console.log(`📡 Port: ${PORT}`);
-    console.log(`🔗 Health Check: http://localhost:${PORT}/api/test`);
     console.log('--------------------------------------------------');
 });
 
-// Handle server startup errors (e.g., port already in use)
+// Handle startup errors
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
         console.error(`❌ Error: Port ${PORT} is already in use.`);
