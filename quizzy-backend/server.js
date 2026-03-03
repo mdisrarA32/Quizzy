@@ -19,23 +19,26 @@ connectDB().catch(err => {
     console.error('CRITICAL: Initial database connection failed:', err.message);
 });
 
-// ================= CORS FIRST =================
-const corsOptions = {
-    origin: 'https://quizzy-alam-alpha.vercel.app',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-};
+// ================= CORS (MUST BE FIRST) =================
+const allowedOrigin = 'https://quizzy-alam-alpha.vercel.app';
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (Postman, mobile apps)
+        if (!origin) return callback(null, true);
+
+        if (origin === allowedOrigin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
 
 // ================= SECURITY AFTER CORS =================
 app.use(helmet());
-
-// Logging
 app.use(morgan('dev'));
-
 app.use(express.json());
 
 // ================= HEALTH CHECK =================
@@ -85,7 +88,7 @@ const server = app.listen(PORT, () => {
     console.log('--------------------------------------------------');
 });
 
-// Handle startup errors
+// ================= STARTUP ERROR HANDLING =================
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
         console.error(`❌ Error: Port ${PORT} is already in use.`);
